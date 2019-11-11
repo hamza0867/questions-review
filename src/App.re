@@ -44,7 +44,6 @@ let question = questionJson =>
 
 type action =
   | ResetQuestions(array(question))
-  | UpdateAnswers(question, array(string))
   | UpdateQuestion(question);
 
 let reducer = (questions, action): array(question) =>
