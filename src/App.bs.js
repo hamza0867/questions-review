@@ -10,6 +10,7 @@ var Relude_Int = require("relude/src/Relude_Int.bs.js");
 var Caml_format = require("bs-platform/lib/js/caml_format.js");
 var Relude_Array = require("relude/src/Relude_Array.bs.js");
 var Decode_ParseError = require("bs-decode/./src/Decode_ParseError.bs.js");
+var Caml_builtin_exceptions = require("bs-platform/lib/js/caml_builtin_exceptions.js");
 var Decode_AsResult_OfParseError = require("bs-decode/./src/Decode_AsResult_OfParseError.bs.js");
 var FileReader$ReasonReactExamples = require("./FileReader.bs.js");
 
@@ -37,17 +38,28 @@ function question(questionJson) {
 }
 
 function reducer(questions, action) {
-  if (action.tag) {
-    var question = action[0];
-    return Relude_Array.map((function (question_) {
-                    if (question_[/* index */4] === question[/* index */4]) {
-                      return question;
-                    } else {
-                      return question_;
-                    }
-                  }))(questions);
-  } else {
-    return action[0];
+  switch (action.tag | 0) {
+    case /* ResetQuestions */0 :
+        return action[0];
+    case /* UpdateAnswers */1 :
+        throw [
+              Caml_builtin_exceptions.match_failure,
+              /* tuple */[
+                "App.re",
+                51,
+                2
+              ]
+            ];
+    case /* UpdateQuestion */2 :
+        var question = action[0];
+        return Relude_Array.map((function (question_) {
+                        if (question_[/* index */4] === question[/* index */4]) {
+                          return question;
+                        } else {
+                          return question_;
+                        }
+                      }))(questions);
+    
   }
 }
 
@@ -62,6 +74,10 @@ function App(Props) {
         }));
   var setMinimumDifficulty = match$1[1];
   var minmumDifficulty = match$1[0];
+  var match$2 = React.useState((function () {
+          return "";
+        }));
+  var setLanguage = match$2[1];
   var hardQuestions = React.useMemo((function () {
           return Relude_Array.filter((function (question) {
                         return question[/* difficultyLevel */2] >= minmumDifficulty;
@@ -70,34 +86,50 @@ function App(Props) {
         questions,
         minmumDifficulty
       ]);
-  var questionsString = JSON.stringify(Relude_Array.map((function (question) {
-                return Js_dict.fromList(/* :: */[
+  var questionsJson = Relude_Array.map((function (question) {
+            return Js_dict.fromList(/* :: */[
+                        /* tuple */[
+                          "question",
+                          question[/* question */0]
+                        ],
+                        /* :: */[
+                          /* tuple */[
+                            "answers",
+                            question[/* answers */1]
+                          ],
+                          /* :: */[
                             /* tuple */[
-                              "question",
-                              question[/* question */0]
+                              "difficultyLevel",
+                              question[/* difficultyLevel */2]
                             ],
                             /* :: */[
                               /* tuple */[
-                                "answers",
-                                question[/* answers */1]
+                                "correct",
+                                question[/* correct */3]
                               ],
-                              /* :: */[
-                                /* tuple */[
-                                  "difficultyLevel",
-                                  question[/* difficultyLevel */2]
-                                ],
-                                /* :: */[
-                                  /* tuple */[
-                                    "correct",
-                                    question[/* correct */3]
-                                  ],
-                                  /* [] */0
-                                ]
-                              ]
+                              /* [] */0
                             ]
-                          ]);
-              }))(questions));
-  var data = "text/json;charset=utf-8," + encodeURIComponent(questionsString);
+                          ]
+                        ]
+                      ]);
+          }))(questions);
+  var props_000 = /* tuple */[
+    "language",
+    match$2[0]
+  ];
+  var props_001 = /* :: */[
+    /* tuple */[
+      "questions",
+      questionsJson
+    ],
+    /* [] */0
+  ];
+  var props = /* :: */[
+    props_000,
+    props_001
+  ];
+  var jsonFile = Js_dict.fromList(props);
+  var data = "text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(jsonFile));
   return React.createElement("div", {
               className: "w-4/5 mx-auto"
             }, React.createElement("div", {
@@ -110,9 +142,19 @@ function App(Props) {
                                             var questionsResult = Curry._3(Decode_AsResult_OfParseError.field, "content", Curry._1(Decode_AsResult_OfParseError.array, question), json);
                                             if (questionsResult.tag) {
                                               console.error(Decode_ParseError.failureToDebugString(questionsResult[0]));
+                                            } else {
+                                              Curry._1(dispatch, /* ResetQuestions */Block.__(0, [Relude_Array.mapWithIndex(makeQuestion, questionsResult[0])]));
+                                            }
+                                            var languageResult = Curry._3(Decode_AsResult_OfParseError.field, "language", Decode_AsResult_OfParseError.string, json);
+                                            if (languageResult.tag) {
+                                              console.error(Decode_ParseError.failureToDebugString(languageResult[0]));
                                               return /* () */0;
                                             } else {
-                                              return Curry._1(dispatch, /* ResetQuestions */Block.__(0, [Relude_Array.mapWithIndex(makeQuestion, questionsResult[0])]));
+                                              var language = languageResult[0];
+                                              console.log(language);
+                                              return Curry._1(setLanguage, (function (param) {
+                                                            return language;
+                                                          }));
                                             }
                                           }));
                             })
@@ -142,7 +184,28 @@ function App(Props) {
                                 return React.createElement("div", {
                                             key: Relude_Int.toString(question[/* index */4]),
                                             className: "border border-black w-full flex-init my-4 p-4"
-                                          }, React.createElement("div", undefined, "index: " + String(question[/* index */4])), React.createElement("div", undefined, "question: " + question[/* question */0]), React.createElement("div", undefined, React.createElement("label", {
+                                          }, React.createElement("div", {
+                                                className: "flex items-center my-3"
+                                              }, React.createElement("label", {
+                                                    htmlFor: "question"
+                                                  }, "question: "), React.createElement("textarea", {
+                                                    className: "border border-gray-500 ml-4 w-4/5 h-20 pl-2",
+                                                    id: "question",
+                                                    name: "question",
+                                                    value: question[/* question */0],
+                                                    onChange: (function (e) {
+                                                        var enonce = e.target.value;
+                                                        return Curry._1(dispatch, /* UpdateQuestion */Block.__(2, [/* record */[
+                                                                        /* question */enonce,
+                                                                        /* answers */question[/* answers */1],
+                                                                        /* difficultyLevel */question[/* difficultyLevel */2],
+                                                                        /* correct */question[/* correct */3],
+                                                                        /* index */question[/* index */4]
+                                                                      ]]));
+                                                      })
+                                                  })), React.createElement("div", {
+                                                className: "my-3"
+                                              }, React.createElement("label", {
                                                     htmlFor: "level"
                                                   }, "level: "), React.createElement("input", {
                                                     className: "border border-gray-500 w-12 pl-2",
@@ -152,7 +215,7 @@ function App(Props) {
                                                     value: String(question[/* difficultyLevel */2]),
                                                     onChange: (function (e) {
                                                         var difficultyLevel = Caml_format.caml_int_of_string(e.target.value);
-                                                        return Curry._1(dispatch, /* UpdateQuestion */Block.__(1, [/* record */[
+                                                        return Curry._1(dispatch, /* UpdateQuestion */Block.__(2, [/* record */[
                                                                         /* question */question[/* question */0],
                                                                         /* answers */question[/* answers */1],
                                                                         /* difficultyLevel */difficultyLevel,
@@ -166,8 +229,44 @@ function App(Props) {
                                                           return React.createElement("li", {
                                                                       key: String(index),
                                                                       className: "ml-5"
-                                                                    }, answer);
-                                                        }), question[/* answers */1]))), React.createElement("div", undefined, "correct answer: " + String(question[/* correct */3] + 1 | 0)));
+                                                                    }, React.createElement("input", {
+                                                                          className: "border border-gray-500 w-4/5 pl-2 my-2",
+                                                                          id: "answer",
+                                                                          name: "answer",
+                                                                          type: "text",
+                                                                          value: answer,
+                                                                          onChange: (function (e) {
+                                                                              var answer = e.target.value;
+                                                                              var mb_answers = Relude_Array.setAt(index, answer, question[/* answers */1]);
+                                                                              var answers = mb_answers !== undefined ? mb_answers : /* array */[];
+                                                                              return Curry._1(dispatch, /* UpdateQuestion */Block.__(2, [/* record */[
+                                                                                              /* question */question[/* question */0],
+                                                                                              /* answers */answers,
+                                                                                              /* difficultyLevel */question[/* difficultyLevel */2],
+                                                                                              /* correct */question[/* correct */3],
+                                                                                              /* index */question[/* index */4]
+                                                                                            ]]));
+                                                                            })
+                                                                        }));
+                                                        }), question[/* answers */1]))), React.createElement("div", undefined, React.createElement("label", {
+                                                    htmlFor: "correct-answer"
+                                                  }, "correct-answer: "), React.createElement("input", {
+                                                    className: "border border-gray-500 w-12 pl-2",
+                                                    id: "correct-answer",
+                                                    name: "correct-answer",
+                                                    type: "number",
+                                                    value: String(question[/* correct */3]),
+                                                    onChange: (function (e) {
+                                                        var correct = Caml_format.caml_int_of_string(e.target.value);
+                                                        return Curry._1(dispatch, /* UpdateQuestion */Block.__(2, [/* record */[
+                                                                        /* question */question[/* question */0],
+                                                                        /* answers */question[/* answers */1],
+                                                                        /* difficultyLevel */question[/* difficultyLevel */2],
+                                                                        /* correct */correct,
+                                                                        /* index */question[/* index */4]
+                                                                      ]]));
+                                                      })
+                                                  })));
                               }))(hardQuestions) : "There are no questions with difficulty higher than " + String(minmumDifficulty)
                   ) : "There are no questions yet. Please upload a file with questions"));
 }

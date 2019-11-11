@@ -44,6 +44,7 @@ let question = questionJson =>
 
 type action =
   | ResetQuestions(array(question))
+  | UpdateAnswers(question, array(string))
   | UpdateQuestion(question);
 
 let reducer = (questions, action): array(question) =>
@@ -68,6 +69,7 @@ let object_ = (props): Js.Json.t => props |> Js.Dict.fromList |> jsonDict;
 let make = () => {
   let (questions, dispatch) = React.useReducer(reducer, [||]);
   let (minmumDifficulty, setMinimumDifficulty) = React.useState(() => 4);
+  let (language, setLanguage) = React.useState(() => "");
 
   let hardQuestions =
     React.useMemo2(
@@ -79,7 +81,7 @@ let make = () => {
       (questions, minmumDifficulty),
     );
 
-  let questionsString: string =
+  let questionsJson: Js.Json.t =
     questions
     |> Relude.Array.map((question: question) =>
          object_([
@@ -92,12 +94,17 @@ let make = () => {
            ("correct", Js.Json.number(question.correct |> float_of_int)),
          ])
        )
-    |> Js.Json.array
-    |> Js.Json.stringify;
+    |> Js.Json.array;
+
+  let jsonFile =
+    object_([
+      ("language", language |> Js.Json.string),
+      ("questions", questionsJson),
+    ]);
 
   let data =
     "text/json;charset=utf-8,"
-    ++ Js.Global.encodeURIComponent(questionsString);
+    ++ Js.Global.encodeURIComponent(jsonFile |> Js.Json.stringify);
 
   <div className="w-4/5 mx-auto">
     <div className="mt-4 flex justify-between">
@@ -109,7 +116,6 @@ let make = () => {
             FileReader.readAsJson(
               ~file,
               ~onLoad=json => {
-                /*Js.log(json);*/
                 let questionsResult =
                   Decode.field("content", Decode.array(question), json);
                 switch (questionsResult) {
@@ -120,6 +126,15 @@ let make = () => {
                       |> Relude.Array.mapWithIndex(makeQuestion),
                     ),
                   )
+                | Error(err) =>
+                  ParseError.failureToDebugString(err) |> Js.Console.error
+                };
+                let languageResult =
+                  Decode.field("language", Decode.string, json);
+                switch (languageResult) {
+                | Ok(language) =>
+                  Js.log(language);
+                  setLanguage(_ => language);
                 | Error(err) =>
                   ParseError.failureToDebugString(err) |> Js.Console.error
                 };
@@ -171,13 +186,24 @@ let make = () => {
               <div
                 key={question.index |> Relude.Int.toString}
                 className="border border-black w-full flex-init my-4 p-4">
-                <div>
-                  {React.string(
-                     "index: " ++ (question.index |> string_of_int),
-                   )}
+                <div className="flex items-center my-3">
+                  <label htmlFor="question">
+                    {React.string("question: ")}
+                  </label>
+                  <textarea
+                    value={question.question}
+                    name="question"
+                    id="question"
+                    className="border border-gray-500 ml-4 w-4/5 h-20 pl-2"
+                    onChange={e => {
+                      let enonce = ReactEvent.Form.target(e)##value;
+                      dispatch(
+                        UpdateQuestion({...question, question: enonce}),
+                      );
+                    }}
+                  />
                 </div>
-                <div> {React.string("question: " ++ question.question)} </div>
-                <div>
+                <div className="my-3">
                   <label htmlFor="level"> {React.string("level: ")} </label>
                   <input
                     type_="number"
@@ -200,17 +226,48 @@ let make = () => {
                     {question.answers
                      |> Relude.Array.mapWithIndex((answer, index) =>
                           <li key={string_of_int(index)} className="ml-5">
-                            {React.string(answer)}
+                            <input
+                              type_="text"
+                              value=answer
+                              name="answer"
+                              id="answer"
+                              className="border border-gray-500 w-4/5 pl-2 my-2"
+                              onChange={e => {
+                                let answer = ReactEvent.Form.target(e)##value;
+                                let mb_answers =
+                                  question.answers
+                                  |> Relude.Array.setAt(index, answer);
+                                let answers =
+                                  switch (mb_answers) {
+                                  | Some(xs) => xs
+                                  | None => [||]
+                                  };
+                                dispatch(
+                                  UpdateQuestion({...question, answers}),
+                                );
+                              }}
+                            />
                           </li>
                         )
                      |> React.array}
                   </ul>
                 </div>
                 <div>
-                  {React.string(
-                     "correct answer: "
-                     ++ (question.correct + 1 |> string_of_int),
-                   )}
+                  <label htmlFor="correct-answer">
+                    {React.string("correct-answer: ")}
+                  </label>
+                  <input
+                    type_="number"
+                    value={question.correct |> string_of_int}
+                    name="correct-answer"
+                    id="correct-answer"
+                    className="border border-gray-500 w-12 pl-2"
+                    onChange={e => {
+                      let correct =
+                        ReactEvent.Form.target(e)##value |> int_of_string;
+                      dispatch(UpdateQuestion({...question, correct}));
+                    }}
+                  />
                 </div>
               </div>
             )
