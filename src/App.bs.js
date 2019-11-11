@@ -10,7 +10,6 @@ var Relude_Int = require("relude/src/Relude_Int.bs.js");
 var Caml_format = require("bs-platform/lib/js/caml_format.js");
 var Relude_Array = require("relude/src/Relude_Array.bs.js");
 var Decode_ParseError = require("bs-decode/./src/Decode_ParseError.bs.js");
-var Caml_builtin_exceptions = require("bs-platform/lib/js/caml_builtin_exceptions.js");
 var Decode_AsResult_OfParseError = require("bs-decode/./src/Decode_AsResult_OfParseError.bs.js");
 var FileReader$ReasonReactExamples = require("./FileReader.bs.js");
 
@@ -38,28 +37,17 @@ function question(questionJson) {
 }
 
 function reducer(questions, action) {
-  switch (action.tag | 0) {
-    case /* ResetQuestions */0 :
-        return action[0];
-    case /* UpdateAnswers */1 :
-        throw [
-              Caml_builtin_exceptions.match_failure,
-              /* tuple */[
-                "App.re",
-                51,
-                2
-              ]
-            ];
-    case /* UpdateQuestion */2 :
-        var question = action[0];
-        return Relude_Array.map((function (question_) {
-                        if (question_[/* index */4] === question[/* index */4]) {
-                          return question;
-                        } else {
-                          return question_;
-                        }
-                      }))(questions);
-    
+  if (action.tag) {
+    var question = action[0];
+    return Relude_Array.map((function (question_) {
+                    if (question_[/* index */4] === question[/* index */4]) {
+                      return question;
+                    } else {
+                      return question_;
+                    }
+                  }))(questions);
+  } else {
+    return action[0];
   }
 }
 
@@ -195,7 +183,7 @@ function App(Props) {
                                                     value: question[/* question */0],
                                                     onChange: (function (e) {
                                                         var enonce = e.target.value;
-                                                        return Curry._1(dispatch, /* UpdateQuestion */Block.__(2, [/* record */[
+                                                        return Curry._1(dispatch, /* UpdateQuestion */Block.__(1, [/* record */[
                                                                         /* question */enonce,
                                                                         /* answers */question[/* answers */1],
                                                                         /* difficultyLevel */question[/* difficultyLevel */2],
@@ -215,7 +203,7 @@ function App(Props) {
                                                     value: String(question[/* difficultyLevel */2]),
                                                     onChange: (function (e) {
                                                         var difficultyLevel = Caml_format.caml_int_of_string(e.target.value);
-                                                        return Curry._1(dispatch, /* UpdateQuestion */Block.__(2, [/* record */[
+                                                        return Curry._1(dispatch, /* UpdateQuestion */Block.__(1, [/* record */[
                                                                         /* question */question[/* question */0],
                                                                         /* answers */question[/* answers */1],
                                                                         /* difficultyLevel */difficultyLevel,
@@ -239,7 +227,7 @@ function App(Props) {
                                                                               var answer = e.target.value;
                                                                               var mb_answers = Relude_Array.setAt(index, answer, question[/* answers */1]);
                                                                               var answers = mb_answers !== undefined ? mb_answers : /* array */[];
-                                                                              return Curry._1(dispatch, /* UpdateQuestion */Block.__(2, [/* record */[
+                                                                              return Curry._1(dispatch, /* UpdateQuestion */Block.__(1, [/* record */[
                                                                                               /* question */question[/* question */0],
                                                                                               /* answers */answers,
                                                                                               /* difficultyLevel */question[/* difficultyLevel */2],
@@ -258,7 +246,7 @@ function App(Props) {
                                                     value: String(question[/* correct */3]),
                                                     onChange: (function (e) {
                                                         var correct = Caml_format.caml_int_of_string(e.target.value);
-                                                        return Curry._1(dispatch, /* UpdateQuestion */Block.__(2, [/* record */[
+                                                        return Curry._1(dispatch, /* UpdateQuestion */Block.__(1, [/* record */[
                                                                         /* question */question[/* question */0],
                                                                         /* answers */question[/* answers */1],
                                                                         /* difficultyLevel */question[/* difficultyLevel */2],
