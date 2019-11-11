@@ -5,5 +5,6 @@ npm-debug.log
 /lib/bs/
 /node_modules/
 /bundleOutput/
+/**/*.bs.js
 /_esy
 styles.css
