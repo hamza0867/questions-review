@@ -6,6 +6,14 @@ type question = {
   index: int,
 };
 
+let getEmptyQuestion = index => {
+  question: "",
+  answers: [|"", "", "", ""|],
+  difficultyLevel: 1,
+  correct: 1,
+  index,
+};
+
 type questionFromJson = {
   question: string,
   answers: array(string),
@@ -273,5 +281,19 @@ let make = () => {
          |> React.array
        }}
     </div>
+    <button
+      className="bg-purple-500 text-white rounded-lg p-2 shadow"
+      onClick={_e =>
+        dispatch(
+          ResetQuestions(
+            Relude.Array.concat(
+              questions,
+              [|getEmptyQuestion(questions |> Relude.Array.length)|],
+            ),
+          ),
+        )
+      }>
+      {React.string("Add a question")}
+    </button>
   </div>;
 };
